@@ -18,20 +18,20 @@
 #define MAXDATASIZE 1000
 #define DEBUG
 volatile sig_atomic_t _running = 1; 
-/*维护当前在线用户列表*/
+/*维护当前在线用户列表 Maintains current online usrers*/
 typedef struct _onusers
 {
 	
-	char id[11];//用户id 
-	pid_t pid;//子进程pid 
-	int fw;//写的管道
-	int fr;//读的管道
+	char id[11];//用户id     User id
+	pid_t pid;//子进程pid    Child process pid
+	int fw;//写的管道        Write pipe
+	int fr;//读的管道        Read pipe
 	int code;
 	struct _onusers *next;
 } onusers;
 onusers *head,*p1,*p2;
-int fpipe[50][2][2];//最多允许50位用户连接
-int pipelen;//管道中的文件长度
+int fpipe[50][2][2];//最多允许50位用户连接         Maximum 50 users online
+int pipelen;//管道中的文件长度                     File lenth for pipe
 int reg(char *addr,int client);
 int checkreg(char *addr,char *nick,char *pwd ,char *ccode,int client);
 /*mysql使用的参数*/
@@ -46,9 +46,9 @@ char sqlbuf[100];
 unsigned int check_statues;
 FILE *fsql;
 MYSQL_ROW sqlrow;
-int wrtsta;		//写入字符串的当前位
+int wrtsta;		//写入字符串的当前位          Current index in the write string
 
-/***自定义函数，每次打开文件，写入，关闭***/
+/***自定义函数，每次打开文件，写入，关闭***//*Every time, open a file, write in it, and the close it*/
 int printl(const char *format,...)
 {
 	FILE *flog;
@@ -68,11 +68,7 @@ void sigterm_handler(int arg)
 {
 	if(arg==SIGTERM)		
 		_running=0;
-	else if(arg==SIGHUP)//若接收到"HUP"信号，程序立即中止，不等待一次阻塞完毕
-	{
-		exit(0);
-	}
-	else if(arg==SIGCHLD)//处理结束的子进程
+	else if(arg==SIGCHLD)//处理结束的子进程 handle dead child process
 	{
 		pid_t pid;
 		pid=wait(NULL);
@@ -105,24 +101,24 @@ void sigterm_handler(int arg)
 
 int main(void)
 {
-	int server;//socket()函数的返回值
-	struct sockaddr_in my_addr;//服务器地址的结构体
+	int server;//socket()函数的返回值                      returned value of socket()
+	struct sockaddr_in my_addr;//服务器地址的结构体         
 	pid_t pc,ppc=1;//进程pid，创建守护进程与子进程时使用
 	int i,fd;
 	FILE *fp;
 	time_t now;
-	char rcvbuf[MAXDATASIZE];//用于接收的字符串
-	char sndbuf[MAXDATASIZE];//用于发送的字符串
-	char opbuf[MAXDATASIZE];//用于操作的字符串
+	char rcvbuf[MAXDATASIZE];//用于接收的字符串            string to be used to recieve
+	char sndbuf[MAXDATASIZE];//用于发送的字符串            string to be used to send
+	char opbuf[MAXDATASIZE];//用于操作的字符串             Intermediate string
 	int numbytes;//接收到的字节数
-	char qid[11];//用户帐号
-	char oid[11];//对方账号
-	int qpwd[21];//密码
+	char qid[11];//用户帐号                                My id   
+	char oid[11];//对方账号                                Other's id
+	int qpwd[21];//密码                                    My password
 	int logflag=0;
-	int numfriends;//好友数目
-	int thispipe;//当前处理的管道
-	fd_set pset;//父进程I/O复用文件集
-	fd_set sset;//子进程I/O复用文件集
+	int numfriends;//好友数目                              Number of friends
+	int thispipe;//当前处理的管道                          Current pipe
+	fd_set pset;//父进程I/O复用文件集                      For select() (parent process)
+	fd_set sset;//子进程I/O复用文件集                      For select() (child process)
 	int childw,childr;//子进程的读写管道
 	int maxf;//最大文件描述
 	char nick[31]={0};
